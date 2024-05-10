@@ -19,7 +19,7 @@ with various modifications.
 ![Circuit](./sonar/circuit.png)
 
 ## Sonar Server 
-![Server](./SonarServer/Screenshot 2024-05-10 122857.png)
+![Server](./SonarServer/Screenshot%202024-05-10%20122857.png)
 
 ## Sonar Web
-![Client](./SonarWeb/Screenshot 2024-05-10 123128.png)
+![Client](./SonarWeb/Screenshot%202024-05-10%20123128.png)
