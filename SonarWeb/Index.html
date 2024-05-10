@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />    
+    <title>sonar-serial-r3</title>
+</head>
+<body>
+    <div>
+        <canvas id="canvas" width="410" height="210"></canvas>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/signalr.js/2.4.3/jquery.signalR.min.js"></script>
+    <script src="http://localhost:8088/signalr/hubs"></script>
+    
+    <script>
+        // global variables
+        var canvas, ctx;
+        var maxDistance = 100;
+        var startTime = new Date();
+        var sonarHub = null;
+
+        var init = function (canvasId) {
+            // initialize canvas
+            canvas = document.getElementById(canvasId);
+
+            ctx = canvas.getContext('2d');
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#00FF00';
+            ctx.fillStyle = 'black';
+
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // move the canvas to the center
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+
+            // scale the canvas x2 (everything is drawn in x2 size)
+            ctx.scale(2, 2);
+        }
+
+        var start = function (url) {
+            // connect to the SignalR server 
+            $.connection.hub.url = url;
+            sonarHub = $.connection.sonarHub;
+
+            if (!sonarHub) {
+                alert('Error connecting to server: ' + url);
+                return;
+            }
+                        
+            sonarHub.client.sonarData = sonarData;                        
+            $.connection.hub.start();
+        };
+                        
+        var sonarData = function (data) {
+            // this function is called whenever the SignalR server
+            // sends data. Data are sent in the following format:
+            // { Angle = 0..180, Distance = 0..100 }            
+            $.each(data, function (index, item) {
+                // translate numeric data {angle, distance} to
+                // lines on the canvas
+                draw(item);
+            });
+        };
+
+        var draw = function (data) {
+            ctx.save();
+
+            // convert degrees to radian and rotate
+            ctx.rotate((90 + data.Angle) * Math.PI / 180);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, data.Distance || maxDistance);
+            ctx.stroke();
+
+            ctx.restore();
+
+            fadeCanvas();
+        };
+
+        var fadeCanvas = function () {
+            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let pixels = imageData.data;
+            let fadeStep = 1;
+
+            for (var i = 0; i < pixels.length; i += 4) {
+                let green = pixels[i + 1];
+
+                let fadedGreen = green - fadeStep;
+                pixels[i + 1] = fadedGreen;
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        };
+
+        $(function () {
+            init('canvas');
+            start('http://localhost:8088/signalr');
+        });
+    </script>
+</body>
+</html>
